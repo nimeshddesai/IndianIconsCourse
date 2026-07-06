@@ -1,0 +1,29 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/data/course.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+# Serve index.html for all routes (SPA-style hash routing)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
