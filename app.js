@@ -12,6 +12,7 @@
 
   window.addEventListener("hashchange", () => {
     state.route = parseRoute();
+    window.scrollTo({ top: 0, behavior: "smooth" });
     render();
   });
 
@@ -272,6 +273,10 @@
   function lessonMarkup(mod, lesson) {
     const savedReflection = state.progress.reflections[lesson.id] || "";
     const score = state.progress.scores[`${mod.id}:${lesson.id}`];
+    const idx = mod.lessons.indexOf(lesson);
+    const prevLesson = idx > 0 ? mod.lessons[idx - 1] : null;
+    const nextLesson = idx < mod.lessons.length - 1 ? mod.lessons[idx + 1] : null;
+    const isSummaryUnlocked = isModuleSummaryUnlocked(mod);
     return `
       <header class="lesson-hero">
         ${lesson.photoUrl ? `<div class="hero-photo"><img src="${escAttr(lesson.photoUrl)}" alt="${escAttr(lesson.hero)}" loading="lazy" /></div>` : ""}
@@ -320,6 +325,31 @@
         </div>
         <div class="feedback" id="quizFeedback" aria-live="polite"></div>
       </section>
+
+      <nav class="lesson-nav" aria-label="Story navigation">
+        <button class="button secondary lesson-nav-btn" id="prevLesson"
+          ${prevLesson ? `data-route="#module/${mod.id}/${prevLesson.id}"` : 'data-route="#module/' + mod.id + '"'}
+          aria-label="${prevLesson ? "Previous story: " + prevLesson.hero : "Back to module overview"}">
+          ← ${prevLesson ? esc(prevLesson.hero) : "Module Overview"}
+        </button>
+        <span class="lesson-nav-count" aria-label="Story ${idx + 1} of ${mod.lessons.length}">
+          ${idx + 1} / ${mod.lessons.length}
+        </span>
+        ${nextLesson ? `
+        <button class="button lesson-nav-btn" id="nextLesson"
+          data-route="#module/${mod.id}/${nextLesson.id}"
+          aria-label="Next story: ${escAttr(nextLesson.hero)}">
+          ${esc(nextLesson.hero)} →
+        </button>
+        ` : `
+        <button class="button lesson-nav-btn" id="nextLesson"
+          data-route="#module/${mod.id}/summary"
+          ${!isSummaryUnlocked ? "disabled title='Complete all lessons to unlock the summary'" : ""}
+          aria-label="Go to module summary">
+          Module Summary →
+        </button>
+        `}
+      </nav>
     `;
   }
 
@@ -333,12 +363,19 @@
     byId("checkQuiz").addEventListener("click", () => {
       const result = evaluateQuiz("lq", lesson.quiz);
       state.progress.scores[`${mod.id}:${lesson.id}`] = result;
-      if (result.correct === result.total) state.progress.completed[lesson.id] = true;
-      saveProgress();
-      byId("quizFeedback").textContent =
-        result.correct === result.total
-          ? `Perfect score! ${result.correct}/${result.total} — lesson complete.`
-          : `${result.correct}/${result.total} correct. Review the story and try again.`;
+      if (result.correct === result.total) {
+        state.progress.completed[lesson.id] = true;
+        saveProgress();
+        // Re-render so the sidebar summary tab unlocks immediately.
+        // Restore the feedback message after the DOM is replaced.
+        renderModulePage(mod.id, lesson.id);
+        byId("quizFeedback").textContent =
+          `Perfect score! ${result.correct}/${result.total} — lesson complete.`;
+      } else {
+        saveProgress();
+        byId("quizFeedback").textContent =
+          `${result.correct}/${result.total} correct. Review the story and try again.`;
+      }
     });
 
     byId("resetQuiz").addEventListener("click", () => resetQuiz("lq", lesson.quiz.length));
@@ -349,12 +386,14 @@
       byId("reflectionFeedback").textContent = "Reflection saved.";
       setTimeout(() => { byId("reflectionFeedback").textContent = ""; }, 2500);
     });
+
   }
 
   // ─── MODULE SUMMARY & QUIZ ────────────────────────────────────────────────
 
   function moduleSummaryMarkup(mod) {
     const score = state.progress.moduleQuizScores[mod.id];
+    const lastLesson = mod.lessons[mod.lessons.length - 1];
     return `
       <header class="lesson-hero summary-header">
         <div class="lesson-meta">
@@ -404,6 +443,20 @@
         </div>
         <div class="feedback" id="moduleQuizFeedback" aria-live="polite"></div>
       </section>
+
+      <nav class="lesson-nav" aria-label="Story navigation">
+        <button class="button secondary lesson-nav-btn" id="prevLesson"
+          data-route="#module/${mod.id}/${lastLesson.id}"
+          aria-label="Previous story: ${escAttr(lastLesson.hero)}">
+          ← ${esc(lastLesson.hero)}
+        </button>
+        <span class="lesson-nav-count">Summary</span>
+        <button class="button lesson-nav-btn" id="nextLesson"
+          data-route="#modules"
+          aria-label="Back to all modules">
+          All Modules →
+        </button>
+      </nav>
     `;
   }
 
@@ -419,6 +472,7 @@
     });
 
     byId("resetModuleQuiz").addEventListener("click", () => resetQuiz("mq", mod.moduleQuiz.length));
+
   }
 
   // ─── Quiz utilities ───────────────────────────────────────────────────────

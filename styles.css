@@ -858,3 +858,52 @@ h3 {
   font-style: italic;
   color: var(--muted);
 }
+
+/* ─── Story Prev / Next navigation ─────────────────────────────────────── */
+
+.lesson-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.lesson-nav-btn {
+  flex: 0 1 auto;
+  max-width: 42%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-nav-count {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .lesson-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .lesson-nav-btn {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .lesson-nav-count {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+}
