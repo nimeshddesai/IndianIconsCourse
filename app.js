@@ -12,7 +12,9 @@
 
   window.addEventListener("hashchange", () => {
     state.route = parseRoute();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (state.route.name !== "modules") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
     render();
   });
 
@@ -62,6 +64,12 @@
       return;
     }
     renderHome();
+    if (name === "modules") {
+      requestAnimationFrame(() => {
+        const el = document.getElementById("modules");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      });
+    }
   }
 
   // ─── Progress helpers ────────────────────────────────────────────────────
@@ -328,9 +336,9 @@
 
       <nav class="lesson-nav" aria-label="Story navigation">
         <button class="button secondary lesson-nav-btn" id="prevLesson"
-          ${prevLesson ? `data-route="#module/${mod.id}/${prevLesson.id}"` : 'data-route="#module/' + mod.id + '"'}
-          aria-label="${prevLesson ? "Previous story: " + prevLesson.hero : "Back to module overview"}">
-          ← ${prevLesson ? esc(prevLesson.hero) : "Module Overview"}
+          ${prevLesson ? `data-route="#module/${mod.id}/${prevLesson.id}"` : 'data-route="#modules"'}
+          aria-label="${prevLesson ? "Previous story: " + prevLesson.hero : "Back to all modules"}">
+          ← ${prevLesson ? esc(prevLesson.hero) : "All Modules"}
         </button>
         <span class="lesson-nav-count" aria-label="Story ${idx + 1} of ${mod.lessons.length}">
           ${idx + 1} / ${mod.lessons.length}
