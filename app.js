@@ -3,6 +3,102 @@
 
   const app = document.getElementById("app");
   const storageKey = "indian-icons-course-progress-v2";
+  const settingsKey = "indian-icons-settings-v1";
+
+  // ─── Display settings (font size + dark mode) ─────────────────────────────
+
+  const FONT_SIZES = [14, 16, 18, 20];
+  const DEFAULT_FONT_IDX = 1; // 16px
+
+  const settings = (function loadSettings() {
+    try { return JSON.parse(localStorage.getItem(settingsKey)) || {}; } catch { return {}; }
+  })();
+
+  function applySettings() {
+    const idx = typeof settings.fontIdx === "number" ? settings.fontIdx : DEFAULT_FONT_IDX;
+    document.documentElement.style.setProperty("--base-font-size", FONT_SIZES[idx] + "px");
+    document.documentElement.setAttribute("data-theme", settings.dark ? "dark" : "");
+  }
+
+  function saveSettings() {
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+  }
+
+  function initSettingsUI() {
+    const trigger  = document.getElementById("settingsToggle");
+    const panel    = document.getElementById("settingsPanel");
+    const fontDec  = document.getElementById("fontDecrease");
+    const fontInc  = document.getElementById("fontIncrease");
+    const fontVal  = document.getElementById("fontSizeVal");
+    const themeTgl = document.getElementById("themeToggle");
+
+    if (!trigger || !panel) return;
+
+    function refreshFontUI() {
+      const idx = typeof settings.fontIdx === "number" ? settings.fontIdx : DEFAULT_FONT_IDX;
+      fontVal.textContent = FONT_SIZES[idx] + "px";
+      fontDec.disabled = idx <= 0;
+      fontInc.disabled = idx >= FONT_SIZES.length - 1;
+    }
+
+    // Set up inner structure with named spans
+    themeTgl.innerHTML = `<span id="themeIcon">${settings.dark ? "☀️" : "🌙"}</span><span class="theme-label">${settings.dark ? "Light mode" : "Dark mode"}</span>`;
+
+    function refreshThemeUI() {
+      document.getElementById("themeIcon").textContent = settings.dark ? "☀️" : "🌙";
+      themeTgl.setAttribute("aria-label", settings.dark ? "Switch to light mode" : "Switch to dark mode");
+      themeTgl.querySelector(".theme-label").textContent = settings.dark ? "Light mode" : "Dark mode";
+    }
+
+    refreshFontUI();
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !panel.hidden;
+      panel.hidden = open;
+      trigger.setAttribute("aria-expanded", String(!open));
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!panel.hidden && !panel.contains(e.target) && e.target !== trigger) {
+        panel.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    fontDec.addEventListener("click", () => {
+      const idx = typeof settings.fontIdx === "number" ? settings.fontIdx : DEFAULT_FONT_IDX;
+      if (idx > 0) {
+        settings.fontIdx = idx - 1;
+        applySettings();
+        saveSettings();
+        refreshFontUI();
+      }
+    });
+
+    fontInc.addEventListener("click", () => {
+      const idx = typeof settings.fontIdx === "number" ? settings.fontIdx : DEFAULT_FONT_IDX;
+      if (idx < FONT_SIZES.length - 1) {
+        settings.fontIdx = idx + 1;
+        applySettings();
+        saveSettings();
+        refreshFontUI();
+      }
+    });
+
+    themeTgl.addEventListener("click", () => {
+      settings.dark = !settings.dark;
+      applySettings();
+      saveSettings();
+      refreshThemeUI();
+    });
+  }
+
+  // Apply settings immediately before first render (prevents flash)
+  applySettings();
+  initSettingsUI();
+
+  // ─── State ────────────────────────────────────────────────────────────────
 
   const state = {
     route: parseRoute(),
@@ -196,11 +292,20 @@
     const total = mod.lessons.length;
     const done = moduleCompletedCount(mod);
     const quizDone = isModuleQuizDone(mod.id);
-    const firstLesson = mod.lessons[0];
     const locked = isModuleLocked(mod);
     const lockedReason = mod.optional
       ? "Complete all 6 modules and their quizzes to unlock"
       : "Complete the previous module's quiz to unlock";
+
+    // Determine where to navigate when the module button is clicked.
+    // If progress has been made, land on the first incomplete lesson (or summary
+    // if all lessons are done but the quiz hasn't been taken yet).
+    const nextIncomplete = mod.lessons.find(l => !state.progress.completed[l.id]);
+    const resumeTarget = done === 0
+      ? mod.lessons[0].id
+      : (nextIncomplete ? nextIncomplete.id : (quizDone ? mod.lessons[0].id : "summary"));
+    const buttonLabel = done > 0 ? "Resume Module" : "Open Module";
+
     return `
       <article class="card module-card${mod.optional ? " optional-card" : ""}${locked ? " locked" : ""}">
         <div class="module-meta">
@@ -217,7 +322,7 @@
         </div>
         ${locked
           ? `<p class="locked-msg">${esc(lockedReason)}</p>`
-          : `<a class="button secondary" href="#module/${mod.id}/${firstLesson.id}">Open Module</a>`
+          : `<a class="button secondary" href="#module/${mod.id}/${resumeTarget}">${buttonLabel}</a>`
         }
       </article>
     `;
