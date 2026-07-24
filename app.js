@@ -7,7 +7,7 @@
 
   // ─── Display settings (font size + dark mode) ─────────────────────────────
 
-  const FONT_SIZES = [14, 16, 18, 20];
+  const FONT_SIZES = [14, 16, 18, 20, 22];
   const DEFAULT_FONT_IDX = 1; // 16px
 
   const settings = (function loadSettings() {
@@ -306,24 +306,29 @@
       : (nextIncomplete ? nextIncomplete.id : (quizDone ? mod.lessons[0].id : "summary"));
     const buttonLabel = done > 0 ? "Resume Module" : "Open Module";
 
+    const lessonsPill = locked
+      ? '<span class="pill locked-pill">🔒 Locked</span>'
+      : `<span class="pill green">${done}/${total} lessons${quizDone ? " · quiz ✓" : ""}</span>`;
+
     return `
       <article class="card module-card${mod.optional ? " optional-card" : ""}${locked ? " locked" : ""}">
         <div class="module-meta">
           ${mod.optional ? '<span class="pill optional">Optional</span>' : `<span class="pill gold">Week ${mod.week}</span>`}
-          ${locked ? '<span class="pill locked-pill">🔒 Locked</span>' : `<span class="pill green">${done}/${total} lessons</span>`}
-          ${quizDone ? '<span class="pill green">Module quiz ✓</span>' : ""}
+          ${lessonsPill}
         </div>
         <h3>${esc(mod.title)}</h3>
         <p class="mod-war">${esc(mod.war)} · ${esc(mod.period)}</p>
-        <p>${esc(mod.focus)}</p>
-        ${locked ? "" : progressBar(done, total)}
+        <p class="mod-focus">${esc(mod.focus)}</p>
         <div class="pill-row">
           ${mod.lessons.map(l => `<span class="pill">${esc(l.hero)}</span>`).join("")}
         </div>
-        ${locked
-          ? `<p class="locked-msg">${esc(lockedReason)}</p>`
-          : `<a class="button secondary" href="#module/${mod.id}/${resumeTarget}">${buttonLabel}</a>`
-        }
+        <div class="module-card-footer">
+          ${locked ? "" : progressBar(done, total)}
+          ${locked
+            ? `<p class="locked-msg">${esc(lockedReason)}</p>`
+            : `<a class="button secondary module-open-btn" href="#module/${mod.id}/${resumeTarget}">${buttonLabel}</a>`
+          }
+        </div>
       </article>
     `;
   }

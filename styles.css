@@ -285,8 +285,9 @@ h3 {
 }
 
 .module-card {
-  display: grid;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 18px;
 }
 
@@ -296,6 +297,33 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Keep week + lesson-count pills on one non-wrapping line */
+.module-meta {
+  flex-wrap: nowrap;
+  align-items: center;
+  min-height: 28px;
+}
+
+/* Focus text and hero pill-row take up available height so the footer
+   (progress bar + button) is always pushed to the bottom of every card */
+.module-card > .mod-focus,
+.module-card > .pill-row {
+  flex: 1 0 auto;
+}
+
+/* Footer: progress bar, optional quiz badge, and open/resume button */
+.module-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.module-open-btn {
+  align-self: flex-start;
 }
 
 .pill {
@@ -327,15 +355,19 @@ h3 {
 
 .progress-wrap {
   display: grid;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
 }
 
 .progress-label {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 12px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .progress-track {
